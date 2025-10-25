@@ -20,6 +20,26 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Guess the Number Game
+
+This is a multiplayer guess the number game with the following features:
+
+### How to Play
+1. **Admin Setup**: One player should enter "admin" as their name to access the admin panel
+2. **Player Joining**: Other players can join by entering any name (except "admin")
+3. **Game Flow**:
+   - Admin prepares rounds by setting row number, column number, and the actual age
+   - Admin starts the round
+   - Players see the row and column numbers and guess the age
+   - Scores are calculated based on how close the guess is to the actual age
+   - Admin can see all player scores in real-time
+
+### Game Rules
+- Score is calculated as: 100 - |guess - actual age| (minimum 0)
+- Players can only submit one guess per round
+- Admin can start new rounds at any time
+- Admin can reset the entire game
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
