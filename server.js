@@ -6,7 +6,7 @@ const fs = require('fs');
 const path = require('path');
 
 const dev = process.env.NODE_ENV !== 'production';
-const hostname = 'localhost';
+const hostname = '0.0.0.0';
 const port = 3001; // Use a different port for the WebSocket server
 const app = next({ dev, hostname, port });
 const handle = app.getRequestHandler();
