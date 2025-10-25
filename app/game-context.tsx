@@ -14,6 +14,7 @@ type Round = {
   row: number;
   column: number;
   age: number;
+  imageUrl?: string;
 };
 
 type GameState = {
@@ -21,6 +22,7 @@ type GameState = {
   currentRound: Round | null;
   gameStarted: boolean;
   guesses: Record<string, number>; // playerId -> guess
+  currentImage: string | null;
 };
 
 type GameContextType = {
@@ -28,13 +30,14 @@ type GameContextType = {
   currentUser: string | null;
   isAdmin: boolean;
   joinGame: (name: string) => void;
-  startRound: (row: number, column: number, age: number) => void;
-  nextRound: (row: number, column: number, age: number) => void;
+  startRound: (row: number, column: number, age: number, imageUrl?: string) => void;
+  nextRound: (row: number, column: number, age: number, imageUrl?: string) => void;
   submitGuess: (guess: number) => void;
   resetGame: () => void;
   hardReset: () => void;
   isConnected: boolean;
   leaderboard: Player[];
+  uploadImage: (file: File) => Promise<string>;
 };
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -45,6 +48,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     currentRound: null,
     gameStarted: false,
     guesses: {},
+    currentImage: null
   });
   
   const [currentUser, setCurrentUser] = useState<string | null>(null);
@@ -94,12 +98,13 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     });
 
     // Listen for round start
-    socket.on('roundStarted', (round: Round) => {
+    socket.on('roundStarted', (round: Round & { imageUrl?: string }) => {
       setGameState(prev => ({ 
         ...prev, 
         currentRound: round,
         gameStarted: true,
-        guesses: {}
+        guesses: {},
+        currentImage: round.imageUrl || null
       }));
     });
 
@@ -117,7 +122,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         ...prev,
         currentRound: null,
         gameStarted: false,
-        guesses: {}
+        guesses: {},
+        currentImage: null
       }));
     });
 
@@ -127,7 +133,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         players: [],
         currentRound: null,
         gameStarted: false,
-        guesses: {}
+        guesses: {},
+        currentImage: null
       });
       setCurrentUser(null);
       setIsAdmin(false);
@@ -158,15 +165,15 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const startRound = (row: number, column: number, age: number) => {
+  const startRound = (row: number, column: number, age: number, imageUrl?: string) => {
     if (socketRef.current) {
-      socketRef.current.emit('startRound', { row, column, age });
+      socketRef.current.emit('startRound', { row, column, age, imageUrl });
     }
   };
 
-  const nextRound = (row: number, column: number, age: number) => {
+  const nextRound = (row: number, column: number, age: number, imageUrl?: string) => {
     if (socketRef.current) {
-      socketRef.current.emit('nextRound', { row, column, age });
+      socketRef.current.emit('nextRound', { row, column, age, imageUrl });
     }
   };
 
@@ -188,6 +195,34 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const uploadImage = async (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        try {
+          const arrayBuffer = reader.result as ArrayBuffer;
+          const uint8Array = new Uint8Array(arrayBuffer);
+          
+          const response = await fetch('/api/upload-image', {
+            method: 'POST',
+            body: uint8Array
+          });
+          
+          if (!response.ok) {
+            throw new Error('Failed to upload image');
+          }
+          
+          const data = await response.json();
+          resolve(data.imageUrl);
+        } catch (error) {
+          reject(error);
+        }
+      };
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsArrayBuffer(file);
+    });
+  };
+
   return (
     <GameContext.Provider
       value={{
@@ -201,7 +236,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         resetGame,
         hardReset,
         isConnected,
-        leaderboard
+        leaderboard,
+        uploadImage
       }}
     >
       {children}

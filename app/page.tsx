@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { GameProvider, useGame } from './game-context';
 
 export default function Home() {
@@ -127,19 +127,57 @@ function GamePage() {
 }
 
 function AdminView() {
-  const { gameState, startRound, nextRound, resetGame, hardReset } = useGame();
+  const { gameState, startRound, nextRound, resetGame, hardReset, uploadImage } = useGame();
   const [row, setRow] = useState(1);
   const [column, setColumn] = useState(1);
   const [age, setAge] = useState(25);
+  const [image, setImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleStartRound = (e: React.FormEvent) => {
     e.preventDefault();
-    startRound(row, column, age);
+    handleImageAndStartRound(startRound);
   };
 
   const handleNextRound = (e: React.FormEvent) => {
     e.preventDefault();
-    nextRound(row, column, age);
+    handleImageAndStartRound(nextRound);
+  };
+
+  const handleImageAndStartRound = async (roundFunction: Function) => {
+    let imageUrl = '';
+    if (image) {
+      try {
+        setUploading(true);
+        imageUrl = await uploadImage(image);
+      } catch (error) {
+        console.error('Error uploading image:', error);
+        alert('Failed to upload image. Starting round without image.');
+      } finally {
+        setUploading(false);
+      }
+    }
+    roundFunction(row, column, age, imageUrl);
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setImage(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
   };
 
   return (
@@ -223,12 +261,52 @@ function AdminView() {
                   />
                 </div>
               </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Round Image (Optional)
+                </label>
+                <div className="flex items-center space-x-4">
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleImageChange}
+                    accept="image/*"
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={triggerFileInput}
+                    className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl hover:from-purple-600 hover:to-pink-600 focus:outline-none focus:ring-2 focus:ring-purple-500 shadow-md transition-all duration-200"
+                  >
+                    Choose Image
+                  </button>
+                  <span className="text-gray-600 dark:text-gray-300">
+                    {image ? image.name : 'No image selected'}
+                  </span>
+                </div>
+                {imagePreview && (
+                  <div className="mt-4">
+                    <img 
+                      src={imagePreview} 
+                      alt="Preview" 
+                      className="max-w-xs max-h-40 rounded-lg border-2 border-purple-300"
+                    />
+                  </div>
+                )}
+              </div>
+              
               <div>
                 <button
                   type="submit"
-                  className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all duration-200 transform hover:scale-105"
+                  disabled={uploading}
+                  className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 transform hover:scale-105 ${
+                    uploading
+                      ? 'bg-gray-400 cursor-not-allowed'
+                      : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 focus:ring-purple-500'
+                  }`}
                 >
-                  Start Round
+                  {uploading ? 'Uploading...' : 'Start Round'}
                 </button>
               </div>
             </form>
@@ -295,12 +373,52 @@ function AdminView() {
                     />
                   </div>
                 </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Round Image (Optional)
+                  </label>
+                  <div className="flex items-center space-x-4">
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleImageChange}
+                      accept="image/*"
+                      className="hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={triggerFileInput}
+                      className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl hover:from-purple-600 hover:to-pink-600 focus:outline-none focus:ring-2 focus:ring-purple-500 shadow-md transition-all duration-200"
+                    >
+                      Choose Image
+                    </button>
+                    <span className="text-gray-600 dark:text-gray-300">
+                      {image ? image.name : 'No image selected'}
+                    </span>
+                  </div>
+                  {imagePreview && (
+                    <div className="mt-4">
+                      <img 
+                        src={imagePreview} 
+                        alt="Preview" 
+                        className="max-w-xs max-h-40 rounded-lg border-2 border-purple-300"
+                      />
+                    </div>
+                  )}
+                </div>
+                
                 <div>
                   <button
                     type="submit"
-                    className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 transform hover:scale-105"
+                    disabled={uploading}
+                    className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 transform hover:scale-105 ${
+                      uploading
+                        ? 'bg-gray-400 cursor-not-allowed'
+                        : 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 focus:ring-green-500'
+                    }`}
                   >
-                    Next Round
+                    {uploading ? 'Uploading...' : 'Next Round'}
                   </button>
                 </div>
               </form>
@@ -406,6 +524,22 @@ function PlayerView() {
           </div>
         ) : (
           <div className="space-y-8">
+            {/* Display image if available */}
+            {gameState.currentRound?.imageUrl && (
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 border-2 border-purple-200 dark:border-purple-700">
+                <h2 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-white flex items-center">
+                  <span className="mr-2">🖼️</span> Round Image
+                </h2>
+                <div className="flex justify-center">
+                  <img 
+                    src={gameState.currentRound.imageUrl} 
+                    alt="Round clue" 
+                    className="max-w-full max-h-96 rounded-lg border-2 border-purple-300"
+                  />
+                </div>
+              </div>
+            )}
+            
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 border-2 border-purple-200 dark:border-purple-700">
               <h2 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-white flex items-center">
                 <span className="mr-2">🌸</span> Current Challenge
