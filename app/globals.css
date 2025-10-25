@@ -3,13 +3,24 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  /* Wildflower theme colors */
+  --wildflower-primary: #8A2BE2; /* Blue violet */
+  --wildflower-secondary: #FF69B4; /* Hot pink */
+  --wildflower-accent: #FFD700; /* Gold */
+  --wildflower-light: #E6E6FA; /* Lavender */
+  --wildflower-dark: #4B0082; /* Indigo */
+  --wildflower-green: #32CD32; /* Lime green */
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-wildflower-primary: var(--wildflower-primary);
+  --color-wildflower-secondary: var(--wildflower-secondary);
+  --color-wildflower-accent: var(--wildflower-accent);
+  --color-wildflower-light: var(--wildflower-light);
+  --color-wildflower-dark: var(--wildflower-dark);
+  --color-wildflower-green: var(--wildflower-green);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -22,5 +33,40 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Arial', sans-serif;
+  background-image: 
+    radial-gradient(var(--wildflower-light) 10%, transparent 11%),
+    radial-gradient(var(--wildflower-light) 10%, transparent 11%);
+  background-position: 0 0, 25px 25px;
+  background-size: 50px 50px;
+}
+
+/* Wildflower decorations */
+.wildflower-decoration {
+  position: absolute;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.wildflower-decoration::before {
+  content: "✿";
+  position: absolute;
+  font-size: 1.5rem;
+  color: var(--wildflower-primary);
+  opacity: 0.7;
+}
+
+.wildflower-decoration:nth-child(2n)::before {
+  content: "❀";
+  color: var(--wildflower-secondary);
+}
+
+.wildflower-decoration:nth-child(3n)::before {
+  content: "❁";
+  color: var(--wildflower-accent);
+}
+
+.wildflower-decoration:nth-child(4n)::before {
+  content: "✾";
+  color: var(--wildflower-green);
 }
